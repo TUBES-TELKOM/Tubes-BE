@@ -1,16 +1,21 @@
 using Microsoft.OpenApi;
 
+using Tubes_POS_API.Options;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+var apiOptions = builder.Configuration.GetSection("Api").Get<ApiOptions>() ?? new ApiOptions();
+
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    options.SwaggerDoc(apiOptions.Version, new OpenApiInfo
     {
-        Title = "Tubes POS API",
-        Version = "v1",
-        Description = "Backend API untuk sistem POS Food & Beverage."
+        Title = apiOptions.Name,
+        Version = apiOptions.Version,
+        Description = apiOptions.Description
     });
 });
 
@@ -21,8 +26,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Tubes POS API v1");
-        options.DocumentTitle = "Tubes POS API";
+        options.SwaggerEndpoint($"/swagger/{apiOptions.Version}/swagger.json", $"{apiOptions.Name} {apiOptions.Version}");
+        options.DocumentTitle = apiOptions.Name;
     });
 }
 
