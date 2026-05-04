@@ -28,6 +28,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseMiddleware<Tubes_POS_API.Middleware.ExceptionHandlingMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
