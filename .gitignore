@@ -7,8 +7,7 @@
 .env
 
 # ai stuff
-BE_REFERENCE.md
-FE_REFERENCE.md
+.AGENT/
 
 # User-specific files
 *.rsuser
