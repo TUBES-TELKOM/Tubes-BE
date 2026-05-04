@@ -6,6 +6,10 @@
 # dotenv files
 .env
 
+# ai stuff
+BE_REFERENCE.md
+FE_REFERENCE.md
+
 # User-specific files
 *.rsuser
 *.suo
