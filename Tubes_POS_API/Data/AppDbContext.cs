@@ -40,12 +40,5 @@ public sealed class AppDbContext : DbContext
                   .HasForeignKey(ti => ti.MenuId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
-
-        // Dummy data menu
-        modelBuilder.Entity<Menu>().HasData(
-            new Menu { Id = 1, Name = "Nasi Goreng Spesial", Price = 25000m, Category = "Makanan", IsAvailable = true },
-            new Menu { Id = 2, Name = "Es Teh Manis", Price = 5000m, Category = "Minuman", IsAvailable = true },
-            new Menu { Id = 3, Name = "Kopi Hitam", Price = 10000m, Category = "Minuman", IsAvailable = true }
-        );
     }
 }
