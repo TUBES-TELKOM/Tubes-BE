@@ -15,6 +15,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IMenuRepository, MenuRepository>();
 builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<PaymentStateMachine>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<HistoryService>();
 builder.Services.AddScoped<ReportService>();
 
