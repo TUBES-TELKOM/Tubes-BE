@@ -1,17 +1,33 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Tubes_POS_API.Data;
 using Tubes_POS_API.Controllers;
 using Tubes_POS_API.Models;
+using Tubes_POS_API.Entities;
 
 namespace Tubes_POS_API.Tests;
 
-public class HealthControllerTests
+public class HealthControllerTests : IDisposable
 {
-    private readonly HealthController _controller = new();
+    private readonly AppDbContext _db;
+    private readonly HealthController _controller;
+
+    public HealthControllerTests()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _db = new AppDbContext(options);
+        _db.Database.EnsureCreated();
+
+        _controller = new HealthController(_db);
+    }
 
     [Fact]
-    public void Get_ShouldReturnHealthyResponse()
+    public async Task Get_ShouldReturnHealthyResponse()
     {
-        var result = _controller.Get();
+        var result = await _controller.Get();
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var response = Assert.IsType<ApiResponse<HealthCheckResponse>>(ok.Value);
@@ -19,6 +35,7 @@ public class HealthControllerTests
         Assert.True(response.Success);
         Assert.Equal("Service is healthy.", response.Message);
         Assert.Equal("health", response.Data!.Probe);
+        Assert.Equal("ready", response.Data.Checks["database"]);
     }
 
     [Fact]
@@ -31,17 +48,24 @@ public class HealthControllerTests
 
         Assert.Equal("alive", response.Data!.Status);
         Assert.Equal("live", response.Data.Probe);
+        Assert.Equal("running", response.Data.Checks["application"]);
     }
 
     [Fact]
-    public void Ready_ShouldReturnReadyResponse()
+    public async Task Ready_ShouldReturnReadyResponse()
     {
-        var result = _controller.Ready();
+        var result = await _controller.Ready();
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var response = Assert.IsType<ApiResponse<HealthCheckResponse>>(ok.Value);
 
         Assert.Equal("ready", response.Data!.Status);
         Assert.Equal("ready", response.Data.Probe);
+        Assert.Equal("ready", response.Data.Checks["database"]);
+    }
+
+    public void Dispose()
+    {
+        _db.Dispose();
     }
 }
