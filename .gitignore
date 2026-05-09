@@ -8,6 +8,8 @@
 
 # ai stuff
 .AGENT/
+.agents/
+skills-lock.json
 
 # User-specific files
 *.rsuser
