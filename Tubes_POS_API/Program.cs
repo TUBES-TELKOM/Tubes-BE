@@ -1,26 +1,26 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
-
 using Tubes_POS_API.Data;
-using Tubes_POS_API.Options;
 using Tubes_POS_API.Models;
+using Tubes_POS_API.Options;
+using Tubes_POS_API.Repositories;
 using Tubes_POS_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddScoped<IMenuRepository, MenuRepository>();
+builder.Services.AddScoped<IMenuService, MenuService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<HistoryService>();
 builder.Services.AddScoped<ReportService>();
 
-// === Database (SQLite) ===
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Data Source=pos.db"));
-
-// === Services (Dependency Injection) ===
-builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 var apiOptions = builder.Configuration.GetSection("Api").Get<ApiOptions>() ?? new ApiOptions();
 
@@ -36,7 +36,6 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Auto-create database & apply migrations
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -73,7 +72,7 @@ app.UseStatusCodePages(async statusCodeContext =>
     {
         Message = "Endpoint tidak ditemukan.",
         StatusCode = StatusCodes.Status404NotFound,
-        Errors = [ $"Route {requestPath} tidak tersedia." ]
+        Errors = [$"Route {requestPath} tidak tersedia."]
     };
 
     response.ContentType = "application/json";

@@ -6,8 +6,15 @@
 # dotenv files
 .env
 
+# database
+pos.db
+pos.db-wal
+pos.db-shm
+
 # ai stuff
 .AGENT/
+.agents/
+skills-lock.json
 
 # DB temp files
 *.db-shm

@@ -16,12 +16,8 @@ public sealed class TransactionController : ControllerBase
         _transactionService = transactionService;
     }
 
-    /// <summary>
-    /// Buat transaksi baru.
-    /// </summary>
     [HttpPost]
-    public async Task<ActionResult<ApiResponse<TransactionResponse>>> Create(
-        [FromBody] CreateTransactionRequest request)
+    public async Task<ActionResult<ApiResponse<TransactionResponse>>> Create([FromBody] CreateTransactionRequest request)
     {
         var result = await _transactionService.CreateTransactionAsync(request);
 
@@ -32,9 +28,6 @@ public sealed class TransactionController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Ambil detail transaksi berdasarkan ID.
-    /// </summary>
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ApiResponse<TransactionResponse>>> GetById(int id)
     {
@@ -47,9 +40,6 @@ public sealed class TransactionController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Ambil semua transaksi.
-    /// </summary>
     [HttpGet]
     public async Task<ActionResult<ApiResponse<List<TransactionResponse>>>> GetAll()
     {
@@ -62,13 +52,8 @@ public sealed class TransactionController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Tambah item ke cart transaksi.
-    /// </summary>
     [HttpPost("{id:int}/items")]
-    public async Task<ActionResult<ApiResponse<TransactionResponse>>> AddItem(
-        int id,
-        [FromBody] AddItemRequest request)
+    public async Task<ActionResult<ApiResponse<TransactionResponse>>> AddItem(int id, [FromBody] AddItemRequest request)
     {
         var result = await _transactionService.AddItemAsync(id, request);
 
@@ -79,9 +64,6 @@ public sealed class TransactionController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Hapus item dari cart transaksi.
-    /// </summary>
     [HttpDelete("{id:int}/items/{itemId:int}")]
     public async Task<ActionResult<ApiResponse<TransactionResponse>>> RemoveItem(int id, int itemId)
     {
@@ -94,14 +76,8 @@ public sealed class TransactionController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Update quantity item di cart transaksi.
-    /// </summary>
     [HttpPatch("{id:int}/items/{itemId:int}")]
-    public async Task<ActionResult<ApiResponse<TransactionResponse>>> UpdateItemQuantity(
-        int id,
-        int itemId,
-        [FromBody] UpdateItemRequest request)
+    public async Task<ActionResult<ApiResponse<TransactionResponse>>> UpdateItemQuantity(int id, int itemId, [FromBody] UpdateItemRequest request)
     {
         var result = await _transactionService.UpdateItemQuantityAsync(id, itemId, request);
 
