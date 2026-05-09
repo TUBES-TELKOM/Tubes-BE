@@ -23,6 +23,15 @@ public sealed class Transaction
     [Precision(18, 2)]
     public decimal TotalAmount { get; set; }
 
+    [Precision(18, 2)]
+    public decimal PaidAmount { get; set; }
+
+    [Precision(18, 2)]
+    public decimal Change { get; set; }
+
+    [MaxLength(50)]
+    public string PaymentMethod { get; set; } = "cash";
+
     public TransactionStatus Status { get; set; } = TransactionStatus.Created;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
