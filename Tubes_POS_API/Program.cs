@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Tubes_POS_API.Data;
@@ -60,26 +59,7 @@ else
 
 app.UseMiddleware<Tubes_POS_API.Middleware.ExceptionHandlingMiddleware>();
 
-app.UseStatusCodePages(async statusCodeContext =>
-{
-    var response = statusCodeContext.HttpContext.Response;
-
-    if (response.StatusCode != StatusCodes.Status404NotFound || response.HasStarted)
-    {
-        return;
-    }
-
-    var requestPath = statusCodeContext.HttpContext.Request.Path.Value ?? string.Empty;
-    var payload = new ApiErrorResponse
-    {
-        Message = "Endpoint tidak ditemukan.",
-        StatusCode = StatusCodes.Status404NotFound,
-        Errors = [$"Route {requestPath} tidak tersedia."]
-    };
-
-    response.ContentType = "application/json";
-    await response.WriteAsync(JsonSerializer.Serialize(payload));
-});
+app.UseMiddleware<Tubes_POS_API.Middleware.NotFoundResponseMiddleware>();
 
 app.UseAuthorization();
 
