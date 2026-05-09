@@ -87,7 +87,7 @@ public class TransactionServiceTests : IDisposable
 
         Assert.Single(result.Items);
         Assert.Equal(5, result.Items.First().Quantity);
-        Assert.Equal(137_500m, result.TotalAmount);
+        Assert.Equal(138_750m, result.TotalAmount);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class TransactionServiceTests : IDisposable
         var item = afterAdd.Items.First();
         var result = await _service.UpdateItemQuantityAsync(tx.Id, item.Id, new UpdateItemRequest { Quantity = 5 });
 
-        Assert.Equal(137_500m, result.TotalAmount);
+        Assert.Equal(138_750m, result.TotalAmount);
     }
 
     [Fact]

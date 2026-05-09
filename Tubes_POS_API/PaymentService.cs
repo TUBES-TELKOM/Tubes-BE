@@ -1,14 +1,7 @@
-﻿namespace Tubes_POS_API
+﻿using Tubes_POS_API.Models;
+
+namespace Tubes_POS_API
 {
-    // ===============================
-    // GENERIC RESPONSE
-    // ===============================
-    public class ApiResponse<T>
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; }
-        public T Data { get; set; }
-    }
 
     // ===============================
     // PAYMENT SERVICE
