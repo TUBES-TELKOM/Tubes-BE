@@ -1,9 +1,14 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Tubes_POS_API.Repositories;
 using Tubes_POS_API.Services;
+
+using Tubes_POS_API.Data;
+
 using Tubes_POS_API.Options;
 using Tubes_POS_API.Models;
+using Tubes_POS_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +16,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<IMenuRepository, MenuRepository>();
 builder.Services.AddSingleton<IMenuService, MenuService>();
+
+// === Database (SQLite) ===
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? "Data Source=pos.db"));
+
+// === Services (Dependency Injection) ===
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 var apiOptions = builder.Configuration.GetSection("Api").Get<ApiOptions>() ?? new ApiOptions();
 
@@ -26,6 +39,13 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Auto-create database & apply migrations
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -35,8 +55,10 @@ if (app.Environment.IsDevelopment())
         options.DocumentTitle = apiOptions.Name;
     });
 }
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseMiddleware<Tubes_POS_API.Middleware.ExceptionHandlingMiddleware>();
 
