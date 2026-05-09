@@ -42,38 +42,35 @@ public class TransactionPerformanceTests : IDisposable
     }
 
     [Fact]
-    public async Task Checkout_50Items_ShouldCompleteUnder1Second()
+    public async Task AddManyItems_50Items_ShouldCompleteUnder1Second()
     {
-        var items = new List<TransactionItemRequest>();
-        decimal expectedTotal = 0m;
-
-        for (int i = 1; i <= 50; i++)
+        var transaction = await _service.CreateTransactionAsync(new CreateTransactionRequest
         {
-            items.Add(new TransactionItemRequest { MenuId = i, Quantity = i });
-            decimal price = 10_000m + (i * 1_000m);
-            decimal tax = price * 0.11m;
-            expectedTotal += (price + tax) * i;
-        }
-
-        var request = new CreateTransactionRequest
-        {
-            CustomerName = "Perf Test",
-            Items = items,
-            PaidAmount = expectedTotal + 50_000m,
-            PaymentMethod = "qris"
-        };
+            CustomerName = "Perf Test"
+        });
 
         var stopwatch = Stopwatch.StartNew();
 
-        var result = await _service.CreateTransactionAsync(request);
+        for (int i = 1; i <= 50; i++)
+        {
+            await _service.AddItemAsync(transaction.Id, new AddItemRequest { MenuId = i, Quantity = i });
+        }
 
         stopwatch.Stop();
 
+        var result = await _service.GetTransactionByIdAsync(transaction.Id);
+
+        decimal expectedTotal = 0m;
+        for (int i = 1; i <= 50; i++)
+        {
+            var price = 10_000m + (i * 1_000m);
+            expectedTotal += i * (price + (price * 0.11m));
+        }
+
         Assert.Equal(50, result.Items.Count);
         Assert.Equal(expectedTotal, result.TotalAmount);
-        Assert.Equal(50_000m, result.Change);
         Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1),
-            $"Checkout 50 item memakan waktu {stopwatch.ElapsedMilliseconds}ms (batas: 1000ms)");
+            $"Add 50 item memakan waktu {stopwatch.ElapsedMilliseconds}ms (batas: 1000ms)");
     }
 
     [Fact]

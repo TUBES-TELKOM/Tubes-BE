@@ -40,4 +40,7 @@ public sealed class Transaction
 
     [InverseProperty(nameof(TransactionItem.Transaction))]
     public List<TransactionItem> Items { get; set; } = [];
+
+    [InverseProperty(nameof(Payment.Transaction))]
+    public Payment? Payment { get; set; }
 }

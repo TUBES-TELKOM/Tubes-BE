@@ -47,51 +47,18 @@ public sealed class TransactionService : ITransactionService
 
     public async Task<TransactionResponse> CreateTransactionAsync(CreateTransactionRequest request)
     {
-        var requestItems = request.Items ?? [];
-        var transactionItems = new List<TransactionItem>();
-        decimal totalAmount = 0m;
-
-        if (requestItems.Count > 0)
-        {
-            var menuIds = requestItems.Select(i => i.MenuId).Distinct().ToList();
-            var menus = await _db.Menus.Where(m => menuIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
-
-            foreach (var reqItem in requestItems)
-            {
-                if (!menus.TryGetValue(reqItem.MenuId, out var menu))
-                    throw new KeyNotFoundException($"Menu dengan ID {reqItem.MenuId} tidak ditemukan.");
-
-                if (!menu.IsAvailable)
-                    throw new ArgumentException($"Menu '{menu.Name}' sedang tidak tersedia.");
-
-                var unitPrice = CalculateUnitPrice(menu);
-                transactionItems.Add(new TransactionItem
-                {
-                    MenuId = reqItem.MenuId,
-                    Quantity = reqItem.Quantity,
-                    UnitPrice = unitPrice
-                });
-
-                totalAmount += unitPrice * reqItem.Quantity;
-            }
-        }
-
-        var isCheckoutStyle = requestItems.Count > 0;
-        var paidAmount = request.PaidAmount;
-        var change = paidAmount > totalAmount ? paidAmount - totalAmount : 0m;
-
         var transaction = new Transaction
         {
             TransactionCode = GenerateTransactionCode(),
             CustomerName = request.CustomerName,
             TableNumber = request.TableNumber,
-            TotalAmount = totalAmount,
-            PaidAmount = paidAmount,
-            Change = change,
-            PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "cash" : request.PaymentMethod,
-            Status = isCheckoutStyle ? TransactionStatus.Completed : TransactionStatus.Created,
+            TotalAmount = 0m,
+            PaidAmount = 0m,
+            Change = 0m,
+            PaymentMethod = "cash",
+            Status = TransactionStatus.Created,
             CreatedAt = DateTime.UtcNow,
-            Items = transactionItems
+            Items = []
         };
 
         _db.Transactions.Add(transaction);

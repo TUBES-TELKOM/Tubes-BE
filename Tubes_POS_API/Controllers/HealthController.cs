@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Tubes_POS_API.Data;
 using Tubes_POS_API.Models;
 
 namespace Tubes_POS_API.Controllers;
@@ -7,25 +9,37 @@ namespace Tubes_POS_API.Controllers;
 [Route("health")]
 public sealed class HealthController : ControllerBase
 {
-    [HttpGet]
-    // TODO: replace with aggregated service status once dependencies are available.
-    // Should report overall application health and summarize the result of each probe.
-    public ActionResult<ApiResponse<HealthCheckResponse>> Get()
+    private readonly AppDbContext _db;
+
+    public HealthController(AppDbContext db)
     {
+        _db = db;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<ApiResponse<HealthCheckResponse>>> Get()
+    {
+        var databaseReady = await _db.Database.CanConnectAsync();
+        var status = databaseReady ? "ok" : "degraded";
+
         return Ok(new ApiResponse<HealthCheckResponse>
         {
-            Message = "Service is healthy.",
+            Message = databaseReady
+                ? "Service is healthy."
+                : "Service is degraded.",
             Data = new HealthCheckResponse
             {
-                Status = "ok",
-                Probe = "health"
+                Status = status,
+                Probe = "health",
+                Checks = new Dictionary<string, string>
+                {
+                    ["database"] = databaseReady ? "ready" : "not-ready"
+                }
             }
         });
     }
 
     [HttpGet("live")]
-    // TODO: keep this probe lightweight.
-    // It should only verify the application process is running and able to respond to requests.
     public ActionResult<ApiResponse<HealthCheckResponse>> Live()
     {
         return Ok(new ApiResponse<HealthCheckResponse>
@@ -34,24 +48,48 @@ public sealed class HealthController : ControllerBase
             Data = new HealthCheckResponse
             {
                 Status = "alive",
-                Probe = "live"
+                Probe = "live",
+                Checks = new Dictionary<string, string>
+                {
+                    ["application"] = "running"
+                }
             }
         });
     }
 
     [HttpGet("ready")]
-    // TODO: expand this probe when infrastructure is added.
-    // It should check required dependencies such as database connectivity, cache availability,
-    // and any external services before the app is considered ready to receive traffic.
-    public ActionResult<ApiResponse<HealthCheckResponse>> Ready()
+    public async Task<ActionResult<ApiResponse<HealthCheckResponse>>> Ready()
     {
+        var databaseReady = await _db.Database.CanConnectAsync();
+        if (!databaseReady)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse<HealthCheckResponse>
+            {
+                Success = false,
+                Message = "Service is not ready.",
+                Data = new HealthCheckResponse
+                {
+                    Status = "not-ready",
+                    Probe = "ready",
+                    Checks = new Dictionary<string, string>
+                    {
+                        ["database"] = "not-ready"
+                    }
+                }
+            });
+        }
+
         return Ok(new ApiResponse<HealthCheckResponse>
         {
             Message = "Service is ready.",
             Data = new HealthCheckResponse
             {
                 Status = "ready",
-                Probe = "ready"
+                Probe = "ready",
+                Checks = new Dictionary<string, string>
+                {
+                    ["database"] = "ready"
+                }
             }
         });
     }

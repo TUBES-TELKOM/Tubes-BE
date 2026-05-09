@@ -1,4 +1,4 @@
-﻿using Tubes_POS_API.Services;
+﻿using Tubes_POS_API.Models.DTOs;
 
 namespace Tubes_POS_API.Services
 {
@@ -13,7 +13,7 @@ namespace Tubes_POS_API.Services
         }
 
         // Buat laporan sederhana dari rentang tanggal
-        public async Task<object> GetReportAsync(DateTime start, DateTime end)
+        public async Task<ReportResponse> GetReportAsync(DateTime start, DateTime end)
         {
             var data = await _historyService.GetByDateRangeAsync(start, end);
 
@@ -23,20 +23,20 @@ namespace Tubes_POS_API.Services
             decimal rataRata = totalTransaksi > 0 ? totalPendapatan / totalTransaksi : 0;
 
             // Table-driven: breakdown per metode pembayaran
-            string[] metodePembayaran = { "Cash", "Debit", "QRIS", "Transfer" };
+            string[] metodePembayaran = { "cash", "debit", "qris", "transfer" };
 
             var breakdown = new Dictionary<string, decimal>();
             foreach (var metode in metodePembayaran)
             {
                 decimal total = data
-                    .Where(h => h.PaymentMethod == metode)
+                    .Where(h => h.PaymentMethod.ToLower() == metode)
                     .Sum(h => h.TotalAmount);
 
                 breakdown[metode] = total;
             }
 
             // Return sebagai object anonim (mudah dibaca)
-            return new
+            return new ReportResponse
             {
                 StartDate = start,
                 EndDate = end,
