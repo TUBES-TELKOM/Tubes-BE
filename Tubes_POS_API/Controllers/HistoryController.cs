@@ -7,7 +7,7 @@ using Tubes_POS_API.Services;
 namespace Tubes_POS_API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/histories")]
     public class HistoryController : ControllerBase
     {
         private readonly HistoryService _historyService;

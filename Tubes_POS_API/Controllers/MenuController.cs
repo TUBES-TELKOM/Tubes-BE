@@ -7,7 +7,7 @@ using Tubes_POS_API.Services;
 namespace Tubes_POS_API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/menus")]
 public class MenuController : ControllerBase
 {
     private readonly IMenuService _menuService;
