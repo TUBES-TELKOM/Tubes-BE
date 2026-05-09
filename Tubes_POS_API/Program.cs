@@ -1,13 +1,15 @@
-using System.Text.Json;
 using Microsoft.OpenApi;
-
-using Tubes_POS_API.Options;
+using System.Text.Json;
 using Tubes_POS_API.Models;
+using Tubes_POS_API.Options;
+using Tubes_POS_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<HistoryService>();
+builder.Services.AddScoped<ReportService>();
 
 var apiOptions = builder.Configuration.GetSection("Api").Get<ApiOptions>() ?? new ApiOptions();
 
