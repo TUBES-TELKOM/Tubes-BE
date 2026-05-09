@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Tubes_POS_API.Entities.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Tubes_POS_API.Entities.Enums;
 
 namespace Tubes_POS_API.Entities;
 
@@ -11,20 +11,22 @@ public sealed class Payment
     public int Id { get; set; }
 
     [Required]
-    [ForeignKey(nameof(Transaction))]
     public int TransactionId { get; set; }
 
     [Precision(18, 2)]
-    public decimal PaidAmount { get; set; }
+    public decimal AmountPaid { get; set; }
 
     [Precision(18, 2)]
     public decimal ChangeAmount { get; set; }
 
-    public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+    [Required]
+    [MaxLength(50)]
+    public string PaymentMethod { get; set; } = "cash";
 
-    public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
+    public PaymentStatus Status { get; set; } = PaymentStatus.Created;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    [ForeignKey(nameof(TransactionId))]
     public Transaction? Transaction { get; set; }
 }

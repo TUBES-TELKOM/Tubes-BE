@@ -1,4 +1,37 @@
 @Tubes_POS_API_HostAddress = http://localhost:5146
 
-GET {{Tubes_POS_API_HostAddress}}/weatherforecast/
+### 1) Check app is alive
+GET {{Tubes_POS_API_HostAddress}}/health/live
+Accept: application/json
+
+### 2) Check app readiness
+GET {{Tubes_POS_API_HostAddress}}/health/ready
+Accept: application/json
+
+### 3) Check general health
+GET {{Tubes_POS_API_HostAddress}}/health
+Accept: application/json
+
+### 4) Check menus list
+GET {{Tubes_POS_API_HostAddress}}/api/menus
+Accept: application/json
+
+### 5) Check menu detail
+GET {{Tubes_POS_API_HostAddress}}/api/menus/1
+Accept: application/json
+
+### 6) Check transactions list
+GET {{Tubes_POS_API_HostAddress}}/api/transactions
+Accept: application/json
+
+### 7) Check transaction detail
+GET {{Tubes_POS_API_HostAddress}}/api/transactions/1
+Accept: application/json
+
+### 8) Check histories list
+GET {{Tubes_POS_API_HostAddress}}/api/histories
+Accept: application/json
+
+### 9) Check history report
+GET {{Tubes_POS_API_HostAddress}}/api/histories/report?start=2026-01-01&end=2026-12-31
 Accept: application/json
