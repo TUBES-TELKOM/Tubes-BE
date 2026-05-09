@@ -1,43 +1,35 @@
+using Microsoft.EntityFrameworkCore;
+using Tubes_POS_API.Data;
 using Tubes_POS_API.Entities;
 
 namespace Tubes_POS_API.Repositories;
 
-public class MenuRepository : IMenuRepository
+public sealed class MenuRepository : IMenuRepository
 {
-    private static List<Menu> menus = new()
-    {
-        new Menu
-        {
-            Id = 1,
-            Name = "Nasi Goreng",
-            Description = "Nasi goreng spesial",
-            Price = 20000,
-            Category = "Makanan"
-        },
+    private readonly AppDbContext _db;
 
-        new Menu
-        {
-            Id = 2,
-            Name = "Es Teh",
-            Description = "Minuman dingin",
-            Price = 5000,
-            Category = "Minuman"
-        }
-    };
+    public MenuRepository(AppDbContext db)
+    {
+        _db = db;
+    }
 
     public List<Menu> GetAll()
     {
-        return menus;
+        return _db.Menus
+            .AsNoTracking()
+            .OrderBy(m => m.Id)
+            .ToList();
     }
 
     public Menu? GetById(int id)
     {
-        return menus.FirstOrDefault(x => x.Id == id);
+        return _db.Menus.FirstOrDefault(m => m.Id == id);
     }
 
     public void Add(Menu menu)
     {
-        menus.Add(menu);
+        _db.Menus.Add(menu);
+        _db.SaveChanges();
     }
 
     public void Update(Menu menu)
@@ -53,6 +45,8 @@ public class MenuRepository : IMenuRepository
         existingMenu.Category = menu.Category;
         existingMenu.IsAvailable = menu.IsAvailable;
         existingMenu.UpdatedAt = DateTime.UtcNow;
+
+        _db.SaveChanges();
     }
 
     public void Delete(int id)
@@ -61,7 +55,8 @@ public class MenuRepository : IMenuRepository
 
         if (menu != null)
         {
-            menus.Remove(menu);
+            _db.Menus.Remove(menu);
+            _db.SaveChanges();
         }
     }
 }

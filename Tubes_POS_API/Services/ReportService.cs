@@ -23,13 +23,13 @@ namespace Tubes_POS_API.Services
             decimal rataRata = totalTransaksi > 0 ? totalPendapatan / totalTransaksi : 0;
 
             // Table-driven: breakdown per metode pembayaran
-            string[] metodePembayaran = { "Cash", "Debit", "QRIS", "Transfer" };
+            string[] metodePembayaran = { "cash", "debit", "qris", "transfer" };
 
             var breakdown = new Dictionary<string, decimal>();
             foreach (var metode in metodePembayaran)
             {
                 decimal total = data
-                    .Where(h => h.PaymentMethod == metode)
+                    .Where(h => h.PaymentMethod.ToLower() == metode)
                     .Sum(h => h.TotalAmount);
 
                 breakdown[metode] = total;

@@ -1,16 +1,26 @@
+using Microsoft.EntityFrameworkCore;
+using Tubes_POS_API.Data;
 using Tubes_POS_API.Entities;
 using Tubes_POS_API.Repositories;
 using Tubes_POS_API.Services;
 
 namespace Tubes_POS_API.Tests;
 
-public class MenuServiceTests
+public class MenuServiceTests : IDisposable
 {
+    private readonly AppDbContext _db;
     private readonly MenuService _service;
 
     public MenuServiceTests()
     {
-        _service = new MenuService(new MenuRepository());
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _db = new AppDbContext(options);
+        _db.Database.EnsureCreated();
+
+        _service = new MenuService(new MenuRepository(_db));
     }
 
     [Fact]
@@ -19,8 +29,8 @@ public class MenuServiceTests
         var result = _service.GetAll();
 
         Assert.NotEmpty(result);
-        Assert.Contains(result, menu => menu.Name == "Nasi Goreng");
-        Assert.Contains(result, menu => menu.Name == "Es Teh");
+        Assert.Contains(result, menu => menu.Name == "Nasi Goreng Spesial");
+        Assert.Contains(result, menu => menu.Name == "Es Teh Manis");
     }
 
     [Fact]
@@ -89,5 +99,10 @@ public class MenuServiceTests
         _service.Delete(99);
 
         Assert.Null(_service.GetById(99));
+    }
+
+    public void Dispose()
+    {
+        _db.Dispose();
     }
 }

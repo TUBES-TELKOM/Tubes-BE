@@ -77,6 +77,10 @@ public class PaymentServiceTests : IDisposable
         Assert.NotNull(transaction.Payment);
         Assert.Equal("cash", transaction.PaymentMethod);
         Assert.Equal("Completed", transaction.Payment!.Status.ToString());
+
+        var history = await _db.TransactionHistories.FirstAsync(h => h.TransactionId == 1);
+        Assert.Equal(50_000m, history.TotalAmount);
+        Assert.Equal("cash", history.PaymentMethod);
     }
 
     [Fact]

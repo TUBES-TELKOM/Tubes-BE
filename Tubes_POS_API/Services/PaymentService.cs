@@ -71,6 +71,14 @@ public sealed class PaymentService : IPaymentService
         transaction.Status = TransactionStatus.Completed;
         transaction.UpdatedAt = DateTime.UtcNow;
 
+        _db.TransactionHistories.Add(new TransactionHistory
+        {
+            TransactionId = transaction.Id,
+            TransactionDate = DateTime.UtcNow,
+            PaymentMethod = paymentMethod,
+            TotalAmount = totalAmount
+        });
+
         _db.Payments.Add(payment);
         await _db.SaveChangesAsync();
 

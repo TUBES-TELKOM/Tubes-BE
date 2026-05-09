@@ -42,7 +42,7 @@ namespace Tubes_POS_API.Services
         public async Task<List<TransactionHistory>> GetByPaymentMethodAsync(string method)
         {
             return await _context.TransactionHistories
-                .Where(h => h.PaymentMethod == method)
+                .Where(h => h.PaymentMethod.ToLower() == method.ToLower())
                 .ToListAsync();
         }
     }
