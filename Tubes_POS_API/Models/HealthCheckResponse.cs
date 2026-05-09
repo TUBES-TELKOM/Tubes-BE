@@ -7,4 +7,6 @@ public sealed class HealthCheckResponse
     public string Probe { get; init; } = "health";
 
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
+
+    public Dictionary<string, string> Checks { get; init; } = [];
 }

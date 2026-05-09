@@ -1,29 +1,27 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
-using Tubes_POS_API.Repositories;
-using Tubes_POS_API.Services;
-
 using Tubes_POS_API.Data;
-
-using Tubes_POS_API.Options;
 using Tubes_POS_API.Models;
+using Tubes_POS_API.Options;
+using Tubes_POS_API.Repositories;
 using Tubes_POS_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSingleton<IMenuRepository, MenuRepository>();
-builder.Services.AddSingleton<IMenuService, MenuService>();
 
-// === Database (SQLite) ===
+builder.Services.AddScoped<IMenuRepository, MenuRepository>();
+builder.Services.AddScoped<IMenuService, MenuService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<PaymentStateMachine>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<HistoryService>();
+builder.Services.AddScoped<ReportService>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Data Source=pos.db"));
-
-// === Services (Dependency Injection) ===
-builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 var apiOptions = builder.Configuration.GetSection("Api").Get<ApiOptions>() ?? new ApiOptions();
 
@@ -39,7 +37,6 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Auto-create database & apply migrations
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -62,26 +59,7 @@ else
 
 app.UseMiddleware<Tubes_POS_API.Middleware.ExceptionHandlingMiddleware>();
 
-app.UseStatusCodePages(async statusCodeContext =>
-{
-    var response = statusCodeContext.HttpContext.Response;
-
-    if (response.StatusCode != StatusCodes.Status404NotFound || response.HasStarted)
-    {
-        return;
-    }
-
-    var requestPath = statusCodeContext.HttpContext.Request.Path.Value ?? string.Empty;
-    var payload = new ApiErrorResponse
-    {
-        Message = "Endpoint tidak ditemukan.",
-        StatusCode = StatusCodes.Status404NotFound,
-        Errors = [ $"Route {requestPath} tidak tersedia." ]
-    };
-
-    response.ContentType = "application/json";
-    await response.WriteAsync(JsonSerializer.Serialize(payload));
-});
+app.UseMiddleware<Tubes_POS_API.Middleware.NotFoundResponseMiddleware>();
 
 app.UseAuthorization();
 

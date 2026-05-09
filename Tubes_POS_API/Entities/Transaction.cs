@@ -17,6 +17,9 @@ public sealed class Transaction
     [MaxLength(100)]
     public string? CustomerName { get; set; }
 
+    [MaxLength(20)]
+    public string? TableNumber { get; set; }
+
     [Precision(18, 2)]
     public decimal TotalAmount { get; set; }
 
@@ -37,4 +40,7 @@ public sealed class Transaction
 
     [InverseProperty(nameof(TransactionItem.Transaction))]
     public List<TransactionItem> Items { get; set; } = [];
+
+    [InverseProperty(nameof(Payment.Transaction))]
+    public Payment? Payment { get; set; }
 }

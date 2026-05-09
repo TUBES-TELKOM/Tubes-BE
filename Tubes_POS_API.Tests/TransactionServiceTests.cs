@@ -1,17 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Tubes_POS_API.Data;
 using Tubes_POS_API.Entities;
-using Tubes_POS_API.Entities.Enums;
 using Tubes_POS_API.Models.DTOs;
 using Tubes_POS_API.Services;
 
 namespace Tubes_POS_API.Tests;
 
-/// <summary>
-/// Unit tests untuk TransactionService versi POS Warung.
-/// Fokus: Checkout sekaligus (CreateTransaction dengan Items),
-/// perhitungan total otomatis dari backend.
-/// </summary>
 public class TransactionServiceTests : IDisposable
 {
     private readonly AppDbContext _db;
@@ -40,84 +34,84 @@ public class TransactionServiceTests : IDisposable
         _db.SaveChanges();
     }
 
-    // =========================================================================
-    // TEST: CREATE TRANSACTION (CHECKOUT)
-    // =========================================================================
-
     [Fact]
-    public async Task CreateTransaction_WithValidItems_ShouldCalculateTotalCorrectly()
+    public async Task CreateTransaction_EmptyRequest_ShouldCreateDraftTransaction()
     {
-        // Nasi Goreng (Makanan): 25.000 + 11% tax = 27.750. Qty 2 = 55.500
-        // Es Teh (Minuman): 5.000 + 11% tax = 5.550. Qty 3 = 16.650
-        // Total = 72.150
-        var request = new CreateTransactionRequest
+        var result = await _service.CreateTransactionAsync(new CreateTransactionRequest
         {
             CustomerName = "Budi",
-            Items = new List<TransactionItemRequest>
-            {
-                new() { MenuId = 1, Quantity = 2 }, 
-                new() { MenuId = 2, Quantity = 3 }  
-            },
-            PaidAmount = 100_000m,
-            PaymentMethod = "cash"
-        };
+            TableNumber = "A1"
+        });
 
-        var result = await _service.CreateTransactionAsync(request);
-
-        Assert.NotNull(result);
         Assert.Equal("Budi", result.CustomerName);
-        Assert.Equal(72_150m, result.TotalAmount);
-        Assert.Equal(100_000m, result.PaidAmount);
-        Assert.Equal(27_850m, result.Change);
-        Assert.Equal("cash", result.PaymentMethod);
-        Assert.Equal("Completed", result.Status);
-        Assert.Equal(2, result.Items.Count);
+        Assert.Equal("A1", result.TableNumber);
+        Assert.Equal("Created", result.Status);
+        Assert.Equal(0m, result.TotalAmount);
+        Assert.Empty(result.Items);
         Assert.StartsWith("TRX-", result.TransactionCode);
     }
 
     [Fact]
-    public async Task CreateTransaction_MenuNotFound_ShouldThrowKeyNotFoundException()
+    public async Task AddItem_ShouldCalculateTotalCorrectly()
     {
-        var request = new CreateTransactionRequest
-        {
-            CustomerName = "Andi",
-            Items = new List<TransactionItemRequest>
-            {
-                new() { MenuId = 99, Quantity = 1 } // Menu tidak ada
-            }
-        };
+        var tx = await _service.CreateTransactionAsync(new CreateTransactionRequest { CustomerName = "Budi" });
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _service.CreateTransactionAsync(request));
+        await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 1, Quantity = 2 });
+        var result = await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 2, Quantity = 3 });
+
+        Assert.Equal(72_150m, result.TotalAmount);
+        Assert.Equal(2, result.Items.Count);
     }
 
     [Fact]
-    public async Task CreateTransaction_MenuUnavailable_ShouldThrowArgumentException()
+    public async Task AddItem_SameMenu_ShouldMergeQuantity()
     {
-        var request = new CreateTransactionRequest
-        {
-            CustomerName = "Cici",
-            Items = new List<TransactionItemRequest>
-            {
-                new() { MenuId = 4, Quantity = 1 } // Jus Alpukat (IsAvailable = false)
-            }
-        };
+        var tx = await _service.CreateTransactionAsync(new CreateTransactionRequest());
+
+        await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 1, Quantity = 2 });
+        var result = await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 1, Quantity = 3 });
+
+        Assert.Single(result.Items);
+        Assert.Equal(5, result.Items.First().Quantity);
+        Assert.Equal(138_750m, result.TotalAmount);
+    }
+
+    [Fact]
+    public async Task RemoveItem_ShouldRecalculateTotal()
+    {
+        var tx = await _service.CreateTransactionAsync(new CreateTransactionRequest());
+
+        var afterAdd = await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 1, Quantity = 2 });
+        await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 2, Quantity = 3 });
+
+        var itemToRemove = afterAdd.Items.First(i => i.MenuId == 1);
+        var result = await _service.RemoveItemAsync(tx.Id, itemToRemove.Id);
+
+        Assert.Equal(16_650m, result.TotalAmount);
+        Assert.Single(result.Items);
+    }
+
+    [Fact]
+    public async Task UpdateItemQuantity_ShouldRecalculateTotal()
+    {
+        var tx = await _service.CreateTransactionAsync(new CreateTransactionRequest());
+        var afterAdd = await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 1, Quantity = 2 });
+
+        var item = afterAdd.Items.First();
+        var result = await _service.UpdateItemQuantityAsync(tx.Id, item.Id, new UpdateItemRequest { Quantity = 5 });
+
+        Assert.Equal(138_750m, result.TotalAmount);
+    }
+
+    [Fact]
+    public async Task AddItem_MenuUnavailable_ShouldThrowArgumentException()
+    {
+        var tx = await _service.CreateTransactionAsync(new CreateTransactionRequest());
 
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _service.CreateTransactionAsync(request));
+            _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 4, Quantity = 1 }));
 
         Assert.Contains("tidak tersedia", ex.Message);
-    }
-
-    // =========================================================================
-    // TEST: TRANSACTION NOT FOUND
-    // =========================================================================
-
-    [Fact]
-    public async Task GetById_NotFound_ShouldThrowKeyNotFoundException()
-    {
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _service.GetTransactionByIdAsync(999));
     }
 
     public void Dispose()
