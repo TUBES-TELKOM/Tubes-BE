@@ -4,6 +4,7 @@ using Tubes_POS_API.Controllers;
 using Tubes_POS_API.Data;
 using Tubes_POS_API.Entities;
 using Tubes_POS_API.Models;
+using Tubes_POS_API.Models.DTOs;
 using Tubes_POS_API.Repositories;
 using Tubes_POS_API.Services;
 
@@ -33,7 +34,7 @@ public class MenuControllerTests : IDisposable
         var result = _controller.GetAll();
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<List<Menu>>>(ok.Value);
+        var response = Assert.IsType<ApiResponse<List<MenuResponse>>>(ok.Value);
 
         Assert.True(response.Success);
         Assert.NotEmpty(response.Data!);

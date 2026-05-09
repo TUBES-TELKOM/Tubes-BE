@@ -4,6 +4,7 @@ using Tubes_POS_API.Controllers;
 using Tubes_POS_API.Data;
 using Tubes_POS_API.Entities;
 using Tubes_POS_API.Models;
+using Tubes_POS_API.Models.DTOs;
 using Tubes_POS_API.Services;
 
 namespace Tubes_POS_API.Tests;
@@ -42,7 +43,7 @@ public class HistoryControllerTests : IDisposable
         var result = await _controller.GetAll();
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<List<TransactionHistory>>>(ok.Value);
+        var response = Assert.IsType<ApiResponse<List<TransactionHistoryResponse>>>(ok.Value);
 
         Assert.True(response.Success);
         Assert.Single(response.Data!);
@@ -54,7 +55,7 @@ public class HistoryControllerTests : IDisposable
         var result = await _controller.GetReport(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(1));
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<object>>(ok.Value);
+        var response = Assert.IsType<ApiResponse<ReportResponse>>(ok.Value);
 
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
