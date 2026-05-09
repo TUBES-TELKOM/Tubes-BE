@@ -9,6 +9,10 @@
 # ai stuff
 .AGENT/
 
+# DB temp files
+*.db-shm
+*.db-wal
+
 # User-specific files
 *.rsuser
 *.suo
