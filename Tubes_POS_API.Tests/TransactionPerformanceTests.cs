@@ -8,8 +8,8 @@ using Tubes_POS_API.Services;
 namespace Tubes_POS_API.Tests;
 
 /// <summary>
-/// Performance tests untuk TransactionService.
-/// Mengukur waktu eksekusi operasi transaksi di bawah beban.
+/// Performance tests untuk TransactionService versi POS Warung.
+/// Mengukur waktu eksekusi operasi checkout dalam satu hit.
 /// </summary>
 public class TransactionPerformanceTests : IDisposable
 {
@@ -45,47 +45,47 @@ public class TransactionPerformanceTests : IDisposable
     }
 
     // =========================================================================
-    // PERFORMANCE: TRANSAKSI DENGAN BANYAK ITEM
+    // PERFORMANCE: TRANSAKSI DENGAN BANYAK ITEM (SATU KALI HIT)
     // =========================================================================
 
     [Fact]
-    public async Task AddManyItems_50Items_ShouldCompleteUnder2Seconds()
+    public async Task Checkout_50Items_ShouldCompleteUnder1Second()
     {
-        var tx = await _service.CreateTransactionAsync(new CreateTransactionRequest
+        var items = new List<TransactionItemRequest>();
+        decimal expectedTotal = 0;
+
+        for (int i = 1; i <= 50; i++)
+        {
+            items.Add(new TransactionItemRequest { MenuId = i, Quantity = i });
+            expectedTotal += i * (10_000m + (i * 1_000m));
+        }
+
+        var request = new CreateTransactionRequest
         {
             CustomerName = "Perf Test",
-            TableNumber = "P1",
-        });
+            Items = items,
+            PaidAmount = expectedTotal + 50000m,
+            PaymentMethod = "qris"
+        };
 
         var stopwatch = Stopwatch.StartNew();
 
-        for (int i = 1; i <= 50; i++)
-        {
-            await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = i, Quantity = i });
-        }
+        var result = await _service.CreateTransactionAsync(request);
 
         stopwatch.Stop();
 
-        var result = await _service.GetTransactionByIdAsync(tx.Id);
-
         // Verifikasi semua item masuk
         Assert.Equal(50, result.Items.Count);
-
-        // Verifikasi total benar: SUM(i * (10000 + i*1000)) for i=1..50
-        decimal expectedTotal = 0;
-        for (int i = 1; i <= 50; i++)
-        {
-            expectedTotal += i * (10_000m + (i * 1_000m));
-        }
         Assert.Equal(expectedTotal, result.TotalAmount);
+        Assert.Equal(50000m, result.Change);
 
-        // Performance: harus selesai di bawah 2 detik
-        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2),
-            $"Menambah 50 item memakan waktu {stopwatch.ElapsedMilliseconds}ms (batas: 2000ms)");
+        // Performance: Karena cuma 1x hit DB save, harus sangat cepat (< 1 detik)
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1),
+            $"Checkout 50 item memakan waktu {stopwatch.ElapsedMilliseconds}ms (batas: 1000ms)");
     }
 
     // =========================================================================
-    // PERFORMANCE: BUAT BANYAK TRANSAKSI
+    // PERFORMANCE: BUAT BANYAK TRANSAKSI (CONCURRENT/LOOP)
     // =========================================================================
 
     [Fact]
@@ -98,7 +98,12 @@ public class TransactionPerformanceTests : IDisposable
             await _service.CreateTransactionAsync(new CreateTransactionRequest
             {
                 CustomerName = $"Customer {i}",
-                TableNumber = $"T{i}",
+                Items = new List<TransactionItemRequest>
+                {
+                    new() { MenuId = 1, Quantity = 1 }
+                },
+                PaidAmount = 50_000m,
+                PaymentMethod = "cash"
             });
         }
 
@@ -110,47 +115,6 @@ public class TransactionPerformanceTests : IDisposable
         // Performance: harus selesai di bawah 3 detik
         Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(3),
             $"Membuat 100 transaksi memakan waktu {stopwatch.ElapsedMilliseconds}ms (batas: 3000ms)");
-    }
-
-    // =========================================================================
-    // PERFORMANCE: OPERASI CART (ADD, UPDATE, REMOVE) BERURUTAN
-    // =========================================================================
-
-    [Fact]
-    public async Task CartOperations_MixedOps_ShouldCompleteUnder2Seconds()
-    {
-        var tx = await _service.CreateTransactionAsync(new CreateTransactionRequest());
-
-        var stopwatch = Stopwatch.StartNew();
-
-        // Tambah 20 item
-        for (int i = 1; i <= 20; i++)
-        {
-            await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = i, Quantity = 2 });
-        }
-
-        // Update quantity 10 item pertama
-        var currentTx = await _service.GetTransactionByIdAsync(tx.Id);
-        foreach (var item in currentTx.Items.Take(10))
-        {
-            await _service.UpdateItemQuantityAsync(tx.Id, item.Id, new UpdateItemRequest { Quantity = 5 });
-        }
-
-        // Hapus 5 item terakhir
-        currentTx = await _service.GetTransactionByIdAsync(tx.Id);
-        foreach (var item in currentTx.Items.TakeLast(5))
-        {
-            await _service.RemoveItemAsync(tx.Id, item.Id);
-        }
-
-        stopwatch.Stop();
-
-        var result = await _service.GetTransactionByIdAsync(tx.Id);
-        Assert.Equal(15, result.Items.Count);
-
-        // Performance: harus selesai di bawah 2 detik
-        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2),
-            $"Mixed cart operations memakan waktu {stopwatch.ElapsedMilliseconds}ms (batas: 2000ms)");
     }
 
     public void Dispose()

@@ -51,18 +51,51 @@ public sealed class TransactionService : ITransactionService
     }
 
     // =========================================================================
-    // CREATE TRANSACTION
+    // CREATE TRANSACTION (CHECKOUT)
     // =========================================================================
     public async Task<TransactionResponse> CreateTransactionAsync(CreateTransactionRequest request)
     {
+        // 1. Ambil data Menu dari DB untuk memastikan harga benar (Backend is Source of Truth)
+        var menuIds = request.Items.Select(i => i.MenuId).Distinct().ToList();
+        var menus = await _db.Menus.Where(m => menuIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
+
+        var transactionItems = new List<TransactionItem>();
+        decimal totalAmount = 0;
+
+        foreach (var reqItem in request.Items)
+        {
+            if (!menus.TryGetValue(reqItem.MenuId, out var menu))
+                throw new KeyNotFoundException($"Menu dengan ID {reqItem.MenuId} tidak ditemukan.");
+
+            if (!menu.IsAvailable)
+                throw new ArgumentException($"Menu '{menu.Name}' sedang tidak tersedia.");
+
+            var subtotal = menu.Price * reqItem.Quantity;
+            totalAmount += subtotal;
+
+            transactionItems.Add(new TransactionItem
+            {
+                MenuId = reqItem.MenuId,
+                Quantity = reqItem.Quantity,
+                UnitPrice = menu.Price
+            });
+        }
+
+        // Kalkulasi kembalian (diserahkan sepenuhnya ke Person 3 nanti, 
+        // tapi kita sediakan nilai sementaranya)
+        decimal change = request.PaidAmount - totalAmount;
+
         var transaction = new Transaction
         {
             TransactionCode = GenerateTransactionCode(),
             CustomerName = request.CustomerName,
-            TableNumber = request.TableNumber,
-            Status = TransactionStatus.Created,
-            TotalAmount = 0,
+            TotalAmount = totalAmount,
+            PaidAmount = request.PaidAmount,
+            Change = change,
+            PaymentMethod = request.PaymentMethod,
+            Status = TransactionStatus.Completed, // Langsung completed di kasir warung
             CreatedAt = DateTime.UtcNow,
+            Items = transactionItems
         };
 
         _db.Transactions.Add(transaction);
@@ -94,100 +127,7 @@ public sealed class TransactionService : ITransactionService
         return transactions.Select(MapToResponse).ToList();
     }
 
-    // =========================================================================
-    // ADD ITEM TO CART
-    // =========================================================================
-    public async Task<TransactionResponse> AddItemAsync(int transactionId, AddItemRequest request)
-    {
-        var transaction = await FindTransactionWithItemsAsync(transactionId);
 
-        // Table-driven: cek apakah operasi "AddItem" diizinkan untuk status saat ini
-        ValidateOperation(transaction.Status, "AddItem");
-
-        // Validasi menu: harus ada dan tersedia
-        var menu = await _db.Menus.FindAsync(request.MenuId)
-            ?? throw new KeyNotFoundException($"Menu dengan ID {request.MenuId} tidak ditemukan.");
-
-        if (!menu.IsAvailable)
-            throw new ArgumentException($"Menu '{menu.Name}' sedang tidak tersedia.");
-
-        // Cek apakah item menu sudah ada di cart — jika ya, tambah quantity
-        var existingItem = transaction.Items.FirstOrDefault(i => i.MenuId == request.MenuId);
-
-        if (existingItem is not null)
-        {
-            existingItem.Quantity += request.Quantity;
-        }
-        else
-        {
-            var newItem = new TransactionItem
-            {
-                TransactionId = transactionId,
-                MenuId = request.MenuId,
-                Quantity = request.Quantity,
-                UnitPrice = menu.Price,
-            };
-            transaction.Items.Add(newItem);
-        }
-
-        // Recalculate total
-        RecalculateTotal(transaction);
-        transaction.UpdatedAt = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
-
-        // Reload untuk mendapatkan data Menu navigation property yang lengkap
-        return await GetTransactionByIdAsync(transactionId);
-    }
-
-    // =========================================================================
-    // REMOVE ITEM FROM CART
-    // =========================================================================
-    public async Task<TransactionResponse> RemoveItemAsync(int transactionId, int itemId)
-    {
-        var transaction = await FindTransactionWithItemsAsync(transactionId);
-
-        // Table-driven: cek apakah operasi "RemoveItem" diizinkan
-        ValidateOperation(transaction.Status, "RemoveItem");
-
-        var item = transaction.Items.FirstOrDefault(i => i.Id == itemId)
-            ?? throw new KeyNotFoundException($"Item dengan ID {itemId} tidak ditemukan dalam transaksi.");
-
-        transaction.Items.Remove(item);
-        _db.TransactionItems.Remove(item);
-
-        // Recalculate total
-        RecalculateTotal(transaction);
-        transaction.UpdatedAt = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
-
-        return MapToResponse(transaction);
-    }
-
-    // =========================================================================
-    // UPDATE ITEM QUANTITY
-    // =========================================================================
-    public async Task<TransactionResponse> UpdateItemQuantityAsync(int transactionId, int itemId, UpdateItemRequest request)
-    {
-        var transaction = await FindTransactionWithItemsAsync(transactionId);
-
-        // Table-driven: cek apakah operasi "UpdateItem" diizinkan
-        ValidateOperation(transaction.Status, "UpdateItem");
-
-        var item = transaction.Items.FirstOrDefault(i => i.Id == itemId)
-            ?? throw new KeyNotFoundException($"Item dengan ID {itemId} tidak ditemukan dalam transaksi.");
-
-        item.Quantity = request.Quantity;
-
-        // Recalculate total
-        RecalculateTotal(transaction);
-        transaction.UpdatedAt = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
-
-        return await GetTransactionByIdAsync(transactionId);
-    }
 
     // =========================================================================
     // PRIVATE HELPERS
@@ -247,8 +187,10 @@ public sealed class TransactionService : ITransactionService
             Id = transaction.Id,
             TransactionCode = transaction.TransactionCode,
             CustomerName = transaction.CustomerName,
-            TableNumber = transaction.TableNumber,
             TotalAmount = transaction.TotalAmount,
+            PaidAmount = transaction.PaidAmount,
+            Change = transaction.Change,
+            PaymentMethod = transaction.PaymentMethod,
             Status = transaction.Status.ToString(),
             CreatedAt = transaction.CreatedAt,
             UpdatedAt = transaction.UpdatedAt,

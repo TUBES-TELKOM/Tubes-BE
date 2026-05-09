@@ -10,7 +10,6 @@ public sealed class AppDbContext : DbContext
     public DbSet<Menu> Menus => Set<Menu>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<TransactionItem> TransactionItems => Set<TransactionItem>();
-    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,14 +39,6 @@ public sealed class AppDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(ti => ti.MenuId)
                   .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        modelBuilder.Entity<Payment>(entity =>
-        {
-            entity.HasOne(p => p.Transaction)
-                  .WithOne(t => t.Payment)
-                  .HasForeignKey<Payment>(p => p.TransactionId)
-                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
