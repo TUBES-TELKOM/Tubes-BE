@@ -1,8 +1,11 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using Tubes_POS_API.Repositories;
+using Tubes_POS_API.Services;
 
 using Tubes_POS_API.Data;
+
 using Tubes_POS_API.Options;
 using Tubes_POS_API.Models;
 using Tubes_POS_API.Services;
@@ -11,6 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<IMenuRepository, MenuRepository>();
+builder.Services.AddSingleton<IMenuService, MenuService>();
 
 // === Database (SQLite) ===
 builder.Services.AddDbContext<AppDbContext>(options =>
