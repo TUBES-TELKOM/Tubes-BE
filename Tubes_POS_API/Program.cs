@@ -11,6 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<HistoryService>();
+builder.Services.AddScoped<ReportService>();
 
 // === Database (SQLite) ===
 builder.Services.AddDbContext<AppDbContext>(options =>
