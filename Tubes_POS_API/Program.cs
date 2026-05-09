@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.OpenApi;
-
+using Tubes_POS_API.Repositories;
+using Tubes_POS_API.Services;
 using Tubes_POS_API.Options;
 using Tubes_POS_API.Models;
 
@@ -8,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<IMenuRepository, MenuRepository>();
+builder.Services.AddSingleton<IMenuService, MenuService>();
 
 var apiOptions = builder.Configuration.GetSection("Api").Get<ApiOptions>() ?? new ApiOptions();
 
