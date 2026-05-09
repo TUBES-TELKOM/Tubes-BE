@@ -39,6 +39,7 @@ public sealed class ExceptionHandlingMiddleware
         {
             KeyNotFoundException => (StatusCodes.Status404NotFound, "Resource not found."),
             ArgumentException => (StatusCodes.Status400BadRequest, "Invalid request."),
+            InvalidOperationException => (StatusCodes.Status409Conflict, exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
         };
 
