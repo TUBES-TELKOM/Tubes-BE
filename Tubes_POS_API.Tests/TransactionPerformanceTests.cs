@@ -57,7 +57,9 @@ public class TransactionPerformanceTests : IDisposable
         for (int i = 1; i <= 50; i++)
         {
             items.Add(new TransactionItemRequest { MenuId = i, Quantity = i });
-            expectedTotal += i * (10_000m + (i * 1_000m));
+            decimal price = 10_000m + (i * 1_000m);
+            decimal tax = price * 0.11m; // Semua menu (Makanan/Minuman) kena 11% pajak
+            expectedTotal += (price + tax) * i;
         }
 
         var request = new CreateTransactionRequest

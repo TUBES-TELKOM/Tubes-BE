@@ -47,14 +47,16 @@ public class TransactionServiceTests : IDisposable
     [Fact]
     public async Task CreateTransaction_WithValidItems_ShouldCalculateTotalCorrectly()
     {
+        // Nasi Goreng (Makanan): 25.000 + 11% tax = 27.750. Qty 2 = 55.500
+        // Es Teh (Minuman): 5.000 + 11% tax = 5.550. Qty 3 = 16.650
+        // Total = 72.150
         var request = new CreateTransactionRequest
         {
             CustomerName = "Budi",
             Items = new List<TransactionItemRequest>
             {
-                new() { MenuId = 1, Quantity = 2 }, // 2 * 25.000 = 50.000
-                new() { MenuId = 2, Quantity = 3 }  // 3 * 5.000 = 15.000
-                                                    // Total = 65.000
+                new() { MenuId = 1, Quantity = 2 }, 
+                new() { MenuId = 2, Quantity = 3 }  
             },
             PaidAmount = 100_000m,
             PaymentMethod = "cash"
@@ -64,9 +66,9 @@ public class TransactionServiceTests : IDisposable
 
         Assert.NotNull(result);
         Assert.Equal("Budi", result.CustomerName);
-        Assert.Equal(65_000m, result.TotalAmount);
+        Assert.Equal(72_150m, result.TotalAmount);
         Assert.Equal(100_000m, result.PaidAmount);
-        Assert.Equal(35_000m, result.Change);
+        Assert.Equal(27_850m, result.Change);
         Assert.Equal("cash", result.PaymentMethod);
         Assert.Equal("Completed", result.Status);
         Assert.Equal(2, result.Items.Count);

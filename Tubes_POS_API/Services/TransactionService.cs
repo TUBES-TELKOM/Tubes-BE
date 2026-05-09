@@ -19,30 +19,23 @@ public sealed class TransactionService : ITransactionService
     // TABLE-DRIVEN CONSTRUCTION
     // =========================================================================
     // Menggunakan dictionary sebagai "tabel keputusan" untuk menentukan
-    // operasi apa saja yang diizinkan pada setiap status transaksi.
-    // Pendekatan ini menggantikan rantai if-else yang panjang dan rawan error.
+    // tarif pajak (Tax Rate) berdasarkan kategori menu.
+    // Pendekatan ini menggantikan if-else/switch case yang panjang,
+    // sehingga jika ada kategori baru, kita cukup menambahkannya ke tabel ini.
     // =========================================================================
-    private static readonly Dictionary<TransactionStatus, HashSet<string>> AllowedOperations = new()
+    private static readonly Dictionary<string, decimal> CategoryTaxRates = new(StringComparer.OrdinalIgnoreCase)
     {
-        [TransactionStatus.Created]   = [ "AddItem", "RemoveItem", "UpdateItem" ],
-        [TransactionStatus.Paid]      = [],   // Tidak ada operasi cart yang diizinkan
-        [TransactionStatus.Completed] = [],   // Read-only
-        [TransactionStatus.Cancelled] = [],   // Read-only
-    };
-
-    // Table-driven: pesan error per status, menghindari if-else untuk error messages
-    private static readonly Dictionary<TransactionStatus, string> StatusErrorMessages = new()
-    {
-        [TransactionStatus.Created]   = string.Empty,
-        [TransactionStatus.Paid]      = "Transaksi sudah dibayar, tidak bisa diubah.",
-        [TransactionStatus.Completed] = "Transaksi sudah selesai, tidak bisa diubah.",
-        [TransactionStatus.Cancelled] = "Transaksi sudah dibatalkan, tidak bisa diubah.",
+        ["Makanan"] = 0.11m, // PPN 11%
+        ["Minuman"] = 0.11m, // PPN 11%
+        ["Promo"]   = 0.0m,  // Bebas pajak
+        ["Lainnya"] = 0.0m
     };
 
     // Table-driven: format kode transaksi berdasarkan prefix
-    private static readonly Dictionary<string, string> CodePrefixTable = new()
+    private static readonly Dictionary<string, string> CodePrefixTable = new(StringComparer.OrdinalIgnoreCase)
     {
         ["default"] = "TRX",
+        ["online"]  = "ONL"
     };
 
     public TransactionService(AppDbContext db)
@@ -70,14 +63,21 @@ public sealed class TransactionService : ITransactionService
             if (!menu.IsAvailable)
                 throw new ArgumentException($"Menu '{menu.Name}' sedang tidak tersedia.");
 
-            var subtotal = menu.Price * reqItem.Quantity;
+            // Ambil tax rate dari tabel keputusan (Table-Driven)
+            // Jika kategori tidak ada di tabel, default ke 0% pajak
+            var taxRate = CategoryTaxRates.GetValueOrDefault(menu.Category, 0m);
+            var taxAmount = menu.Price * taxRate;
+            
+            var unitPriceWithTax = menu.Price + taxAmount;
+            var subtotal = unitPriceWithTax * reqItem.Quantity;
+            
             totalAmount += subtotal;
 
             transactionItems.Add(new TransactionItem
             {
                 MenuId = reqItem.MenuId,
                 Quantity = reqItem.Quantity,
-                UnitPrice = menu.Price
+                UnitPrice = unitPriceWithTax // Simpan harga yang sudah termasuk pajak
             });
         }
 
@@ -133,28 +133,7 @@ public sealed class TransactionService : ITransactionService
     // PRIVATE HELPERS
     // =========================================================================
 
-    /// <summary>
-    /// Table-driven validation: cek apakah operasi diizinkan berdasarkan status.
-    /// Lookup ke dictionary AllowedOperations, bukan if-else.
-    /// </summary>
-    private static void ValidateOperation(TransactionStatus status, string operation)
-    {
-        if (!AllowedOperations.TryGetValue(status, out var allowed) || !allowed.Contains(operation))
-        {
-            // Table-driven: ambil pesan error dari dictionary
-            var message = StatusErrorMessages.GetValueOrDefault(status, "Operasi tidak diizinkan.");
-            throw new InvalidOperationException(message);
-        }
-    }
 
-    /// <summary>
-    /// Hitung ulang total transaksi dari semua items.
-    /// Total = SUM(quantity * unitPrice) per item.
-    /// </summary>
-    private static void RecalculateTotal(Transaction transaction)
-    {
-        transaction.TotalAmount = transaction.Items.Sum(i => i.Quantity * i.UnitPrice);
-    }
 
     /// <summary>
     /// Generate kode transaksi unik: TRX-yyyyMMdd-HHmmss-fff
