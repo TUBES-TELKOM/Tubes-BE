@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Tubes_POS_API.Entities;
 using Tubes_POS_API.Models;
 using Tubes_POS_API.Models.DTOs;
 using Tubes_POS_API.Services;
@@ -19,7 +20,7 @@ namespace Tubes_POS_API.Controllers
         }
 
         // GET api/history
-    [HttpGet]
+        [HttpGet]
         public async Task<ActionResult<ApiResponse<List<TransactionHistoryResponse>>>> GetAll()
         {
             var result = await _historyService.GetAllAsync();
@@ -80,7 +81,7 @@ namespace Tubes_POS_API.Controllers
             });
         }
 
-        private static TransactionHistoryResponse MapToResponse(Entities.TransactionHistory history)
+        private static TransactionHistoryResponse MapToResponse(TransactionHistory history)
         {
             return new TransactionHistoryResponse
             {
