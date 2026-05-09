@@ -52,28 +52,14 @@ public class TransactionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateTransaction_WithItems_ShouldCalculateTotalCorrectly()
+    public async Task AddItem_ShouldCalculateTotalCorrectly()
     {
-        var request = new CreateTransactionRequest
-        {
-            CustomerName = "Budi",
-            Items = new List<TransactionItemRequest>
-            {
-                new() { MenuId = 1, Quantity = 2 },
-                new() { MenuId = 2, Quantity = 3 }
-            },
-            PaidAmount = 100_000m,
-            PaymentMethod = "cash"
-        };
+        var tx = await _service.CreateTransactionAsync(new CreateTransactionRequest { CustomerName = "Budi" });
 
-        var result = await _service.CreateTransactionAsync(request);
+        await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 1, Quantity = 2 });
+        var result = await _service.AddItemAsync(tx.Id, new AddItemRequest { MenuId = 2, Quantity = 3 });
 
-        Assert.Equal("Budi", result.CustomerName);
         Assert.Equal(72_150m, result.TotalAmount);
-        Assert.Equal(100_000m, result.PaidAmount);
-        Assert.Equal(27_850m, result.Change);
-        Assert.Equal("cash", result.PaymentMethod);
-        Assert.Equal("Completed", result.Status);
         Assert.Equal(2, result.Items.Count);
     }
 
