@@ -11,6 +11,7 @@ namespace Tubes_POS_API.Tests;
 
 public class MiddlewareTests
 {
+    // Tests that invalid operations return JSON conflict responses.
     [Fact]
     public async Task ExceptionMiddleware_ShouldReturnJsonConflictForInvalidOperation()
     {
@@ -33,6 +34,7 @@ public class MiddlewareTests
         Assert.Contains("payment conflict", response.Errors);
     }
 
+    // Tests that missing routes return JSON 404 responses.
     [Fact]
     public async Task NotFoundMiddleware_ShouldWriteJson404Response()
     {

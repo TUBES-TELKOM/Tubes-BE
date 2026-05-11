@@ -5,6 +5,7 @@ namespace Tubes_POS_API.Tests;
 
 public class PaymentStateMachineTests
 {
+    // Tests that the initial payment state is Created.
     [Fact]
     public void InitialState_ShouldBeCreated()
     {
@@ -13,6 +14,7 @@ public class PaymentStateMachineTests
         Assert.Equal(PaymentStatus.Created, machine.CurrentState);
     }
 
+    // Tests that payment can move from Created to Paid.
     [Fact]
     public void MarkPaid_ShouldMoveToPaid()
     {
@@ -23,6 +25,7 @@ public class PaymentStateMachineTests
         Assert.Equal(PaymentStatus.Paid, machine.CurrentState);
     }
 
+    // Tests that Paid can move to Completed.
     [Fact]
     public void Complete_AfterPaid_ShouldMoveToCompleted()
     {
@@ -34,6 +37,7 @@ public class PaymentStateMachineTests
         Assert.Equal(PaymentStatus.Completed, machine.CurrentState);
     }
 
+    // Tests that invalid completion without paying throws.
     [Fact]
     public void Complete_WithoutPaid_ShouldThrow()
     {

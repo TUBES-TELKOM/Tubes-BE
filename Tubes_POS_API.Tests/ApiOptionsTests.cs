@@ -5,6 +5,7 @@ namespace Tubes_POS_API.Tests;
 
 public class ApiOptionsTests
 {
+    // Tests that ApiOptions binds correctly from configuration.
     [Fact]
     public void ApiOptions_ShouldBindFromConfiguration()
     {

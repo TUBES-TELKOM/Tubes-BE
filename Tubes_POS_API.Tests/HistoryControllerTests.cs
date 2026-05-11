@@ -37,6 +37,7 @@ public class HistoryControllerTests : IDisposable
         _db.SaveChanges();
     }
 
+    // Tests that history list response is wrapped.
     [Fact]
     public async Task GetAll_ShouldReturnWrappedResponse()
     {
@@ -49,6 +50,7 @@ public class HistoryControllerTests : IDisposable
         Assert.Single(response.Data!);
     }
 
+    // Tests that report response is wrapped.
     [Fact]
     public async Task GetReport_ShouldReturnWrappedResponse()
     {

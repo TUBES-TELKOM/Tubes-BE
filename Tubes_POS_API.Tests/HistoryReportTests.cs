@@ -58,6 +58,7 @@ public class HistoryReportTests : IDisposable
         _db.SaveChanges();
     }
 
+    // Tests that history is returned in newest-first order.
     [Fact]
     public async Task GetAllAsync_ShouldReturnHistoryInDescendingOrder()
     {
@@ -67,6 +68,7 @@ public class HistoryReportTests : IDisposable
         Assert.True(result[0].TransactionDate >= result[1].TransactionDate);
     }
 
+    // Tests that date filtering works correctly.
     [Fact]
     public async Task GetByDateRangeAsync_ShouldFilterCorrectly()
     {
@@ -79,6 +81,7 @@ public class HistoryReportTests : IDisposable
         Assert.All(result, item => Assert.True(item.TransactionDate >= start && item.TransactionDate <= end));
     }
 
+    // Tests that payment-method filtering works correctly.
     [Fact]
     public async Task GetByPaymentMethodAsync_ShouldFilterCorrectly()
     {
@@ -88,6 +91,7 @@ public class HistoryReportTests : IDisposable
         Assert.All(result, item => Assert.Equal("cash", item.PaymentMethod));
     }
 
+    // Tests that report aggregation returns correct totals.
     [Fact]
     public async Task GetReportAsync_ShouldAggregateTotals()
     {

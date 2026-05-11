@@ -34,6 +34,7 @@ public class TransactionServiceTests : IDisposable
         _db.SaveChanges();
     }
 
+    // Tests that creating a transaction starts as an empty draft/cart.
     [Fact]
     public async Task CreateTransaction_EmptyRequest_ShouldCreateDraftTransaction()
     {
@@ -51,6 +52,7 @@ public class TransactionServiceTests : IDisposable
         Assert.StartsWith("TRX-", result.TransactionCode);
     }
 
+    // Tests that cart items increase total amount correctly.
     [Fact]
     public async Task AddItem_ShouldCalculateTotalCorrectly()
     {
@@ -63,6 +65,7 @@ public class TransactionServiceTests : IDisposable
         Assert.Equal(2, result.Items.Count);
     }
 
+    // Tests that adding the same menu twice merges quantity.
     [Fact]
     public async Task AddItem_SameMenu_ShouldMergeQuantity()
     {
@@ -76,6 +79,7 @@ public class TransactionServiceTests : IDisposable
         Assert.Equal(138_750m, result.TotalAmount);
     }
 
+    // Tests that removing an item recalculates the total.
     [Fact]
     public async Task RemoveItem_ShouldRecalculateTotal()
     {
@@ -91,6 +95,7 @@ public class TransactionServiceTests : IDisposable
         Assert.Single(result.Items);
     }
 
+    // Tests that updating quantity recalculates the total.
     [Fact]
     public async Task UpdateItemQuantity_ShouldRecalculateTotal()
     {
@@ -103,6 +108,7 @@ public class TransactionServiceTests : IDisposable
         Assert.Equal(138_750m, result.TotalAmount);
     }
 
+    // Tests that unavailable menu items are rejected.
     [Fact]
     public async Task AddItem_MenuUnavailable_ShouldThrowArgumentException()
     {

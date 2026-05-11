@@ -41,6 +41,7 @@ public class TransactionPerformanceTests : IDisposable
         _db.SaveChanges();
     }
 
+    // Tests cart add performance with many items.
     [Fact]
     public async Task AddManyItems_50Items_ShouldCompleteUnder1Second()
     {
@@ -73,6 +74,7 @@ public class TransactionPerformanceTests : IDisposable
             $"Add 50 item memakan waktu {stopwatch.ElapsedMilliseconds}ms (batas: 1000ms)");
     }
 
+    // Tests bulk transaction creation performance.
     [Fact]
     public async Task CreateManyTransactions_100Transactions_ShouldCompleteUnder3Seconds()
     {
@@ -95,6 +97,7 @@ public class TransactionPerformanceTests : IDisposable
             $"Membuat 100 transaksi memakan waktu {stopwatch.ElapsedMilliseconds}ms (batas: 3000ms)");
     }
 
+    // Tests mixed cart operations performance.
     [Fact]
     public async Task CartOperations_MixedOps_ShouldCompleteUnder2Seconds()
     {

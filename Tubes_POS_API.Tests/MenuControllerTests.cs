@@ -28,6 +28,7 @@ public class MenuControllerTests : IDisposable
         _controller = new MenuController(service);
     }
 
+    // Tests that the menu list response is wrapped.
     [Fact]
     public void GetAll_ShouldReturnWrappedResponse()
     {
@@ -40,6 +41,7 @@ public class MenuControllerTests : IDisposable
         Assert.NotEmpty(response.Data!);
     }
 
+    // Tests that missing menu returns wrapped 404.
     [Fact]
     public void GetById_WhenMissing_ShouldReturnNotFoundWrapper()
     {

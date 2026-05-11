@@ -24,6 +24,7 @@ public class HealthControllerTests : IDisposable
         _controller = new HealthController(_db);
     }
 
+    // Tests that general health reports database readiness.
     [Fact]
     public async Task Get_ShouldReturnHealthyResponse()
     {
@@ -38,6 +39,7 @@ public class HealthControllerTests : IDisposable
         Assert.Equal("ready", response.Data.Checks["database"]);
     }
 
+    // Tests that live endpoint only reports application liveness.
     [Fact]
     public void Live_ShouldReturnAliveResponse()
     {
@@ -51,6 +53,7 @@ public class HealthControllerTests : IDisposable
         Assert.Equal("running", response.Data.Checks["application"]);
     }
 
+    // Tests that readiness endpoint returns ready state.
     [Fact]
     public async Task Ready_ShouldReturnReadyResponse()
     {

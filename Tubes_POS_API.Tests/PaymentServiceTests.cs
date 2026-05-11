@@ -57,6 +57,7 @@ public class PaymentServiceTests : IDisposable
         _db.SaveChanges();
     }
 
+    // Tests successful payment creation and history persistence.
     [Fact]
     public async Task ProcessPayment_WithEnoughCash_ShouldCreatePayment()
     {
@@ -83,6 +84,7 @@ public class PaymentServiceTests : IDisposable
         Assert.Equal("cash", history.PaymentMethod);
     }
 
+    // Tests that insufficient payment is rejected.
     [Fact]
     public async Task ProcessPayment_WithInsufficientCash_ShouldThrow()
     {
